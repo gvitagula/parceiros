@@ -37,6 +37,37 @@
         }
         return gk_fileData[filename] || "";
         }
+        </script><script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
         </script><!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -398,6 +429,9 @@
       background-color: #ffffff;
       border-radius: 8px;
     }
+    .partner-card.ekpb img {
+      height: 120px;
+    }
     .partner-card .partner-name {
       font-size: 0.9em;
       color: #ffffff;
@@ -405,6 +439,15 @@
       padding: 10px;
       font-family: 'Orbitron', sans-serif;
       background: linear-gradient(180deg, #2c2c2c, #1a1a1a);
+    }
+    .partner-card .partner-name a {
+      color: #00cc99;
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+    .partner-card .partner-name a:hover {
+      color: #ff6f61;
+      text-decoration: underline;
     }
     .partner-overlay {
       position: fixed;
@@ -430,8 +473,18 @@
     }
     .partner-overlay img {
       max-width: 300px;
+      max-height: 300px;
+      object-fit: contain;
       border-radius: 10px;
       margin-bottom: 15px;
+      image-rendering: optimizeQuality;
+    }
+    .partner-overlay img.ekpb {
+      max-width: 250px;
+      max-height: 250px;
+    }
+    .partner-overlay img.error {
+      content: url('https://via.placeholder.com/300x200.png?text=Imagem+Indisponível');
     }
     .partner-overlay.show {
       opacity: 1;
@@ -576,6 +629,9 @@
       .partner-card img {
         height: 180px;
       }
+      .partner-card.ekpb img {
+        height: 140px;
+      }
       .partner-card .partner-name {
         font-size: 1em;
       }
@@ -584,6 +640,11 @@
       }
       .partner-overlay img {
         max-width: 400px;
+        max-height: 400px;
+      }
+      .partner-overlay img.ekpb {
+        max-width: 300px;
+        max-height: 300px;
       }
     }
     @media (max-width: 600px) {
@@ -681,6 +742,9 @@
       .partner-card img {
         height: 120px;
       }
+      .partner-card.ekpb img {
+        height: 100px;
+      }
       .partner-card .partner-name {
         font-size: 0.8em;
       }
@@ -690,6 +754,11 @@
       }
       .partner-overlay img {
         max-width: 200px;
+        max-height: 200px;
+      }
+      .partner-overlay img.ekpb {
+        max-width: 150px;
+        max-height: 150px;
       }
     }
   </style>
@@ -722,7 +791,7 @@
           </div>
           <span class="volume-icon low" id="volume-icon" onclick="playClickSound(); changeVolume()" onmouseover="playHoverSound()" aria-label="Ajustar volume" tabindex="0" onkeydown="if(event.key === 'Enter') { playClickSound(); changeVolume(); }">
             <svg class="volume-mute" viewBox="0 0 24 24" style="display: none;">
-              <path d="M3 9v6h4l5 5V4L7 9H3zm11 0l3.5 3.5L14 15V9zm5.5 3l-2.5-2.5L19.5 7l2.5 2.5L19.5 12z"/>
+              <path d="M3 9v6h4l5 5V4L7 9H3zm11 0l3.5-3.5L14 15V9zm5.5 3l-2.5-2.5L19.5 7l2.5 2.5L19.5 12z"/>
             </svg>
             <svg class="volume-low" viewBox="0 0 24 24">
               <path d="M3 9v6h4l5 5V4L7 9H3z"/>
@@ -738,9 +807,9 @@
       </div>
     </header>
     <div class="nav-menu" role="navigation" aria-label="Menu principal">
-      <a class="nav-item" href="https://gvitagula.github.io/site/" onclick="playClickSound()" onmouseover="playHoverSound()" role="tab" aria-selected="false">Página Principal</a>
-      <a class="nav-item" href="https://gvitagula.github.io/quemsomos/" onclick="playClickSound()" onmouseover="playHoverSound()" role="tab" aria-selected="false">Quem Somos</a>
-      <div class="nav-item dropdown" role="tab" aria-selected="false">
+      <a class="nav-item" href="https://gvitagula.github.io/site/" onclick="playClickSound()" onmouseover="playHoverSound()" role="button" aria-selected="false">Página Principal</a>
+      <a class="nav-item" href="https://gvitagula.github.io/quemsomos/" onclick="playClickSound()" onmouseover="playHoverSound()" role="button" aria-selected="false">Quem Somos</a>
+      <div class="nav-item dropdown" role="button" aria-selected="false">
         <span class="dropdown-toggle" onclick="playClickSound(); toggleDropdown(event, 'produtos')" onmouseover="playHoverSound()">Produtos</span>
         <div class="dropdown-content">
           <a href="https://gvitagula.github.io/paes/" onclick="playClickSound(); setActiveTab('paes')" onmouseover="playHoverSound()" role="menuitem">Pães</a>
@@ -750,16 +819,16 @@
           <a href="https://gvitagula.github.io/precos/" onclick="playClickSound(); setActiveTab('precos')" onmouseover="playHoverSound()" role="menuitem">Preços</a>
         </div>
       </div>
-      <a class="nav-item" href="https://gvitagula.github.io/contatos/" onclick="playClickSound()" onmouseover="playHoverSound()" role="tab" aria-selected="false">Contatos</a>
-      <a class="nav-item active" href="https://gvitagula.github.io/parceiros/" onclick="playClickSound()" onmouseover="playHoverSound()" role="tab" aria-selected="true">Parceiros</a>
-      <div class="nav-item dropdown" role="tab" aria-selected="false">
+      <a class="nav-item" href="https://gvitagula.github.io/site/contatos/" onclick="playClickSound()" onmouseover="playHoverSound()" role="button" aria-selected="false">Contatos</a>
+      <a class="nav-item active" href="https://gvitagula.github.io/site/parceiros/" onclick="playClickSound()" onmouseover="playHoverSound()" role="button" aria-selected="true">Parceiros</a>
+      <div class="nav-item dropdown" role="button" aria-selected="false">
         <span class="dropdown-toggle" onclick="playClickSound(); toggleDropdown(event, 'downloads')" onmouseover="playHoverSound()">Downloads</span>
         <div class="dropdown-content">
           <a href="https://gvitagula.github.io/programas/" onclick="playClickSound(); setActiveTab('programas')" onmouseover="playHoverSound()" role="menuitem">Programas</a>
           <a href="https://gvitagula.github.io/imagens/" onclick="playClickSound(); setActiveTab('imagens')" onmouseover="playHoverSound()" role="menuitem">Imagens</a>
           <a href="https://gvitagula.github.io/video/" onclick="playClickSound(); setActiveTab('videos')" onmouseover="playHoverSound()" role="menuitem">Vídeos</a>
           <a href="https://gvitagula.github.io/mp3/" onclick="playClickSound(); setActiveTab('audios')" onmouseover="playHoverSound()" role="menuitem">Áudios</a>
-          <a href="https://gvitagula.github.io/pdf/" onclick="playClickSound(); setActiveTab('texto')" onmouseover="playHoverSound()" role="menuitem">Texto</a>
+          <a href="https://gvitagula.github.io/pdf/" onclick="playClickSound(); setActiveTab('texto')" onmouseover="playHoverSound()" role="menuitem">PDF</a>
           <a href="https://gvitagula.github.io/outros/" onclick="playClickSound(); setActiveTab('outros')" onmouseover="playHoverSound()" role="menuitem">Outros</a>
         </div>
       </div>
@@ -769,24 +838,40 @@
         <h2>Nossos Parceiros</h2>
         <div class="partners-grid">
           <div class="partner-card" data-name="3 Corações" data-image="https://i.ibb.co/yB66SYTM/3coracoes.jpg" tabindex="0" aria-label="Ver detalhes do parceiro 3 Corações">
-            <img src="https://i.ibb.co/yB66SYTM/3coracoes.jpg" alt="3 Corações" loading="lazy">
-            <div class="partner-name">3 Corações</div>
+            <img src="https://i.ibb.co/yB66SYTM/3coracoes.jpg" alt="3 Corações" onerror="this.classList.add('error')" loading="lazy">
+            <div class="partner-name">
+              <a href="https://www.3coracoes.com.br/" target="_blank" rel="noopener noreferrer" aria-label="Visitar site da 3 Corações">3 Corações</a>
+            </div>
           </div>
           <div class="partner-card" data-name="Casa Garcia" data-image="https://i.ibb.co/SzRq6Mg/casagarcia.jpg" tabindex="0" aria-label="Ver detalhes do parceiro Casa Garcia">
-            <img src="https://i.ibb.co/SzRq6Mg/casagarcia.jpg" alt="Casa Garcia" loading="lazy">
-            <div class="partner-name">Casa Garcia</div>
+            <img src="https://i.ibb.co/SzRq6Mg/casagarcia.jpg" alt="Casa Garcia" onerror="this.classList.add('error')" loading="lazy">
+            <div class="partner-name">
+              <a href="https://casagarciafortaleza.com.br/" target="_blank" rel="noopener noreferrer" aria-label="Visitar site da Casa Garcia">Casa Garcia</a>
+            </div>
           </div>
-          <div class="partner-card" data-name="EKPBGigial Music" data-image="https://i.ibb.co/GgfBLPf/EKPBGigial-Music.jpg" tabindex="0" aria-label="Ver detalhes do parceiro EKPBGigial Music">
-            <img src="https://i.ibb.co/GgfBLPf/EKPBGigial-Music.jpg" alt="EKPBGigial Music" loading="lazy">
-            <div class="partner-name">EKPBGigial Music</div>
+          <div class="partner-card ekpb" data-name="EKPB Digital Music" data-image="https://i.ibb.co/GgfBLPf/EKPBDigital-Music.jpg" tabindex="0" aria-label="Ver detalhes do parceiro EKPB Digital Music">
+            <img src="https://i.ibb.co/GgfBLPf/EKPBDigital-Music.jpg" alt="EKPB Digital Music" onerror="this.classList.add('error')" class="ekpb-img" loading="lazy">
+            <div class="partner-name">
+              <a href="https://www.ouvirmusica.com.br/ekpb-digital-music/vita-gula-um-hit-no-lar/" target="_blank" rel="noopener noreferrer" aria-label="Visitar página da EKPB Digital Music">EKPB Digital Music</a>
+            </div>
           </div>
-          <div class="partner-card" data-name="SB" data-image="https://i.ibb.co/8gmF5XHd/sb.jpg" tabindex="0" aria-label="Ver detalhes do parceiro SB">
-            <img src="https://i.ibb.co/8gmF5XHd/sb.jpg" alt="SB" loading="lazy">
-            <div class="partner-name">SB</div>
+          <div class="partner-card" data-name="SB" data-image="https://i.ibb.co/rGx7TCn7/sb.jpg" tabindex="0" aria-label="Ver detalhes do parceiro SB">
+            <img src="https://i.ibb.co/rGx7TCn7/sb.jpg" alt="SB" onerror="this.classList.add('error')" loading="lazy">
+            <div class="partner-name">
+              <a href="https://www.instagram.com/atacarejo.sb/" target="_blank" rel="noopener noreferrer" aria-label="Visitar Instagram do SB">SB</a>
+            </div>
           </div>
           <div class="partner-card" data-name="Varejão do Trigo" data-image="https://i.ibb.co/v4F7dzQF/varejaodotrigo.jpg" tabindex="0" aria-label="Ver detalhes do parceiro Varejão do Trigo">
-            <img src="https://i.ibb.co/v4F7dzQF/varejaodotrigo.jpg" alt="Varejão do Trigo" loading="lazy">
-            <div class="partner-name">Varejão do Trigo</div>
+            <img src="https://i.ibb.co/v4F7dzQF/varejaodotrigo.jpg" alt="Varejão do Trigo" onerror="this.classList.add('error')" loading="lazy">
+            <div class="partner-name">
+              <a href="https://www.instagram.com/varejaodotrigo/" target="_blank" rel="noopener noreferrer" aria-label="Visitar Instagram do Varejão do Trigo">Varejão do Trigo</a>
+            </div>
+          </div>
+          <div class="partner-card" data-name="Banco do Brasil" data-image="https://i.ibb.co/Nn3LKTJY/banco-do-brasil-logo2-69229.jpg" tabindex="0" aria-label="Ver detalhes do parceiro Banco do Brasil">
+            <img src="https://i.ibb.co/Nn3LKTJY/banco-do-brasil-logo2-69229.jpg" alt="Banco do Brasil" onerror="this.classList.add('error')" loading="lazy">
+            <div class="partner-name">
+              <a href="https://www.bb.com.br/site/pra-voce/" target="_blank" rel="noopener noreferrer" aria-label="Visitar site do Banco do Brasil">Banco do Brasil</a>
+            </div>
           </div>
         </div>
       </div>
@@ -812,7 +897,7 @@
     <button onclick="hideMegaphoneMessage()" aria-label="Fechar mensagem promocional">Fechar</button>
   </div>
 
-  <div id="partner-overlay" class="partner-overlay" role="alert" aria-live="polite" tabindex="0"></div>
+  <div id="partner-overlay" class="partner-overlay" role="dialog" aria-live="polite" tabindex="0"></div>
 
   <script>
     let volumeLevel = 0;
@@ -836,8 +921,9 @@
     let isOverlayVisible = false;
 
     function showOverlay(name, imageUrl) {
+      const imgClass = name === "EKPB Digital Music" ? 'ekpb' : '';
       const content = `
-        <img src="${imageUrl}" alt="${name}" />
+        <img src="${imageUrl}" alt="${name}" class="${imgClass}" onerror="this.classList.add('error');" />
         <span>${name}</span>
         <button onclick="hideOverlay()">Fechar</button>
       `;
@@ -846,6 +932,9 @@
       isOverlayVisible = true;
       overlay.focus();
       playClickSound();
+      // Preload image
+      const img = new Image();
+      img.src = imageUrl;
     }
 
     function hideOverlay() {
@@ -860,7 +949,7 @@
 
     function handlePartnerInteraction(event) {
       const card = event.target.closest('.partner-card');
-      if (!card) return;
+      if (!card || event.target.tagName.toLowerCase() === 'a') return;
       const name = card.dataset.name;
       const imageUrl = card.dataset.image;
       if (isMobile()) {
@@ -896,13 +985,17 @@
     }
 
     function playHoverSound() {
-      if (!hoverSound.paused) hoverSound.pause();
+      if (!hoverSound.paused) {
+        hoverSound.pause();
+      }
       hoverSound.currentTime = 0;
       hoverSound.play().catch(error => console.error("Hover sound playback failed:", error));
     }
 
     function playClickSound() {
-      if (!clickSound.paused) clickSound.pause();
+      if (!clickSound.paused) {
+        clickSound.pause();
+      }
       clickSound.currentTime = 0;
       clickSound.play().catch(error => console.error("Click sound playback failed:", error));
     }
@@ -963,8 +1056,8 @@
       audio.src = tracks[currentTrackIndex];
       if (isPlaying) {
         await audio.play();
-        waveform.classList.add('playing');
         playPauseBtn.innerHTML = '⏸';
+        waveform.classList.add('playing');
       }
     }
 
@@ -973,8 +1066,8 @@
       audio.src = tracks[currentTrackIndex];
       if (isPlaying) {
         await audio.play();
-        waveform.classList.add('playing');
         playPauseBtn.innerHTML = '⏸';
+        waveform.classList.add('playing');
       }
     }
 
@@ -993,7 +1086,9 @@
       const dropdown = event.currentTarget.parentElement;
       const isOpen = dropdown.classList.contains('open');
       document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('open'));
-      if (!isOpen) dropdown.classList.add('open');
+      if (!isOpen) {
+        dropdown.classList.add('open');
+      }
     }
 
     document.addEventListener('click', (event) => {
@@ -1007,7 +1102,9 @@
         item.classList.remove('active');
       });
       const activeItem = document.querySelector(`[onclick*="${tabName}"]`);
-      if (activeItem) activeItem.classList.add('active');
+      if (activeItem) {
+        activeItem.classList.add('active');
+      }
     }
 
     function hideMegaphoneMessage() {
@@ -1022,11 +1119,7 @@
       document.getElementById('megaphone-message').style.display = 'block';
       setTimeout(hideMegaphoneMessage, 5000);
       setActiveTab('parceiros');
-
-      // Create starry background
       createStars();
-
-      // Add event listeners for partner cards
       const partnerCards = document.querySelectorAll('.partner-card');
       partnerCards.forEach(card => {
         if (isMobile()) {
@@ -1040,5 +1133,5 @@
       });
     });
   </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'945f162aca0dcb45',t:'MTc0ODI4MTUzMC4wMDAwMDA=='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
